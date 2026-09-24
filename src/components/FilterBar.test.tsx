@@ -43,12 +43,14 @@ describe('FilterBar', () => {
     expect(push).toHaveBeenLastCalledWith('/filmes?streaming=8&genero=35');
   });
 
-  it('aplica ordenação e nota mínima ao mudar o select', async () => {
+  it('aplica ordenação e nota mínima ao mudar o select, combinando com a seleção anterior', async () => {
+    // Antes da correção do Important 2, a segunda seleção partia sempre da prop `filters`
+    // (que fica parada até a navegação terminar) e "esquecia" a ordenação escolhida antes.
     const user = renderBar();
     await user.selectOptions(screen.getByLabelText('Ordenar por'), 'nota');
     expect(push).toHaveBeenLastCalledWith('/filmes?ordem=nota');
     await user.selectOptions(screen.getByLabelText('Nota mínima'), '7');
-    expect(push).toHaveBeenLastCalledWith('/filmes?notaMin=7');
+    expect(push).toHaveBeenLastCalledWith('/filmes?notaMin=7&ordem=nota');
   });
 
   it('aplica a faixa de anos no envio, corrigindo a ordem', async () => {
@@ -63,5 +65,19 @@ describe('FilterBar', () => {
     const user = renderBar({ ...DEFAULT_FILTERS, generos: [35], notaMin: 7 });
     await user.click(screen.getByRole('button', { name: 'Limpar filtros' }));
     expect(push).toHaveBeenLastCalledWith('/filmes');
+  });
+
+  it('mantém as seleções ao clicar rápido em vários chips, mesmo com a navegação ainda pendente', async () => {
+    // push nunca resolve/atualiza a prop `filters` (como no mundo real, até a navegação terminar);
+    // a segunda seleção precisa se somar à otimista, não à prop `filters` original.
+    const user = renderBar();
+
+    await user.click(screen.getByRole('button', { name: 'Netflix' }));
+    expect(screen.getByRole('button', { name: 'Netflix' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Prime Video' }));
+    expect(screen.getByRole('button', { name: 'Prime Video' })).toHaveAttribute('aria-pressed', 'true');
+
+    expect(push).toHaveBeenLastCalledWith('/filmes?streaming=8,119');
   });
 });

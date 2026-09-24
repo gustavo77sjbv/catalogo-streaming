@@ -1,9 +1,10 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import type { FormEvent } from 'react';
+import { useEffect, useState, useTransition, type FormEvent } from 'react';
 import { filtersHref, parseFilters } from '@/lib/filters';
-import type { Filters, Genre, Provider, SortOrder } from '@/lib/types';
+import { DEFAULT_FILTERS, type Filters, type Genre, type Provider, type SortOrder } from '@/lib/types';
+import { useFilterPending } from './FilterPendingContext';
 import { ProviderChips } from './ProviderChips';
 
 const ORDENS: { value: SortOrder; label: string }[] = [
@@ -29,9 +30,33 @@ interface FilterBarProps {
 export function FilterBar({ filters, providers, genres }: FilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+  // `filters` vem do server e só se atualiza quando a navegação termina; enquanto isso, os
+  // cliques seguintes precisam se basear no último valor aplicado localmente, não na prop
+  // (que fica parada até lá). Usamos useState (em vez de useOptimistic) porque o `router.push`
+  // do Next não retorna uma Promise: dentro de um `startTransition` síncrono e sem navegação
+  // real (como nos testes, com `push` mockado), useOptimistic reverteria para a prop antes
+  // mesmo do clique terminar. useState dá o feedback imediato sem depender disso, e o efeito
+  // abaixo resincroniza com o servidor quando a navegação de fato chega.
+  const [appliedFilters, setAppliedFilters] = useState(filters);
+  // Ajuste de estado durante a renderização (em vez de um efeito) ao receber uma prop `filters`
+  // nova: evita o "cascading render" de chamar setState dentro de um efeito.
+  const [syncedFilters, setSyncedFilters] = useState(filters);
+  if (filters !== syncedFilters) {
+    setSyncedFilters(filters);
+    setAppliedFilters(filters);
+  }
+  const { setPending } = useFilterPending();
+
+  useEffect(() => {
+    setPending(isPending);
+  }, [isPending, setPending]);
 
   function apply(next: Filters) {
-    router.push(filtersHref(pathname, next));
+    setAppliedFilters(next);
+    startTransition(() => {
+      router.push(filtersHref(pathname, next));
+    });
   }
 
   function handleYears(event: FormEvent<HTMLFormElement>) {
@@ -41,26 +66,26 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
     const { anoDe, anoAte } = parseFilters(
       new URLSearchParams({ anoDe: String(data.get('anoDe') ?? ''), anoAte: String(data.get('anoAte') ?? '') }),
     );
-    apply({ ...filters, anoDe, anoAte });
+    apply({ ...appliedFilters, anoDe, anoAte });
   }
 
   return (
     <section aria-label="Filtros" className="flex flex-col gap-4">
       <ProviderChips
         providers={providers}
-        selected={filters.streamings}
-        onToggle={(id) => apply({ ...filters, streamings: toggle(filters.streamings, id) })}
+        selected={appliedFilters.streamings}
+        onToggle={(id) => apply({ ...appliedFilters, streamings: toggle(appliedFilters.streamings, id) })}
       />
 
       <div role="group" aria-label="Gêneros" className="flex flex-wrap gap-2">
         {genres.map((genre) => {
-          const active = filters.generos.includes(genre.id);
+          const active = appliedFilters.generos.includes(genre.id);
           return (
             <button
               key={genre.id}
               type="button"
               aria-pressed={active}
-              onClick={() => apply({ ...filters, generos: toggle(filters.generos, genre.id) })}
+              onClick={() => apply({ ...appliedFilters, generos: toggle(appliedFilters.generos, genre.id) })}
               className={`rounded-full px-3 py-1 text-xs ${
                 active ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               }`}
@@ -72,7 +97,11 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
-        <form key={`${filters.anoDe}-${filters.anoAte}`} onSubmit={handleYears} className="flex items-end gap-2">
+        <form
+          key={`${appliedFilters.anoDe}-${appliedFilters.anoAte}`}
+          onSubmit={handleYears}
+          className="flex items-end gap-2"
+        >
           <div className="flex flex-col gap-1">
             <label htmlFor="filtro-ano-de" className="text-xs text-zinc-400">
               Ano de
@@ -84,7 +113,7 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
               inputMode="numeric"
               min={1870}
               max={2100}
-              defaultValue={filters.anoDe ?? ''}
+              defaultValue={appliedFilters.anoDe ?? ''}
               className={`${fieldClass} w-24`}
             />
           </div>
@@ -99,7 +128,7 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
               inputMode="numeric"
               min={1870}
               max={2100}
-              defaultValue={filters.anoAte ?? ''}
+              defaultValue={appliedFilters.anoAte ?? ''}
               className={`${fieldClass} w-24`}
             />
           </div>
@@ -114,9 +143,12 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
           </label>
           <select
             id="filtro-nota"
-            value={filters.notaMin ?? ''}
+            value={appliedFilters.notaMin ?? ''}
             onChange={(event) =>
-              apply({ ...filters, notaMin: event.target.value === '' ? null : Number(event.target.value) })
+              apply({
+                ...appliedFilters,
+                notaMin: event.target.value === '' ? null : Number(event.target.value),
+              })
             }
             className={fieldClass}
           >
@@ -135,8 +167,8 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
           </label>
           <select
             id="filtro-ordem"
-            value={filters.ordem}
-            onChange={(event) => apply({ ...filters, ordem: event.target.value as SortOrder })}
+            value={appliedFilters.ordem}
+            onChange={(event) => apply({ ...appliedFilters, ordem: event.target.value as SortOrder })}
             className={fieldClass}
           >
             {ORDENS.map((ordem) => (
@@ -147,7 +179,7 @@ export function FilterBar({ filters, providers, genres }: FilterBarProps) {
           </select>
         </div>
 
-        <button type="button" onClick={() => router.push(pathname)} className="text-sm text-zinc-400 underline">
+        <button type="button" onClick={() => apply(DEFAULT_FILTERS)} className="text-sm text-zinc-400 underline">
           Limpar filtros
         </button>
       </div>
