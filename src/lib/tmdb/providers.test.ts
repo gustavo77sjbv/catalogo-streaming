@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { server, TMDB, useMsw } from '../../../test/msw';
 import { makeTitle } from '../../../test/fixtures';
 import { attachProviders, getTitleProviders, listStreamingProviders } from './providers';
@@ -41,6 +41,23 @@ describe('listStreamingProviders', () => {
     server.use(http.get(`${TMDB}/watch/providers/tv`, () => HttpResponse.json({ results: [netflixRaw] })));
     await expect(listStreamingProviders('serie')).resolves.toHaveLength(1);
   });
+
+  it('remove lojas de aluguel/compra (TVOD), que o discover não usa', async () => {
+    const appleTvStoreRaw = {
+      provider_id: 2,
+      provider_name: 'Apple TV',
+      logo_path: null,
+      display_priority: 3,
+      display_priorities: { BR: 3 },
+    };
+    server.use(
+      http.get(`${TMDB}/watch/providers/movie`, () =>
+        HttpResponse.json({ results: [netflixRaw, primeRaw, appleTvStoreRaw] }),
+      ),
+    );
+    const providers = await listStreamingProviders('filme');
+    expect(providers.map((p) => p.id)).toEqual([8, 119]);
+  });
 });
 
 describe('getTitleProviders', () => {
@@ -78,7 +95,8 @@ describe('getTitleProviders', () => {
 });
 
 describe('attachProviders', () => {
-  it('preenche os streamings e deixa vazio quando um título falha', async () => {
+  it('preenche os streamings e deixa vazio quando um título falha, com um aviso no console', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     server.use(
       http.get(`${TMDB}/movie/1/watch/providers`, () =>
         HttpResponse.json({ id: 1, results: { BR: { flatrate: [netflixRaw] } } }),
@@ -91,5 +109,8 @@ describe('attachProviders', () => {
     ]);
     expect(filme.streamings.map((p) => p.nome)).toEqual(['Netflix']);
     expect(serie.streamings).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('[tmdb] falha ao buscar streamings', 'serie', 2, expect.anything());
+    warn.mockRestore();
   });
 });
