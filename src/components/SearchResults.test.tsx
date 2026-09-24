@@ -26,7 +26,7 @@ describe('SearchResults', () => {
     render(await SearchResults({ query: 'duna' }));
 
     expect(searchTitles).toHaveBeenCalledWith('duna');
-    expect(screen.getByRole('heading', { name: 'Resultados para "duna"' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Resultados para “duna”' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Netflix' })).toBeInTheDocument();
     expect(screen.getByText('Não disponível em streaming no Brasil')).toBeInTheDocument();
   });
@@ -34,6 +34,6 @@ describe('SearchResults', () => {
   it('avisa quando nada foi encontrado', async () => {
     searchTitles.mockResolvedValue([]);
     render(await SearchResults({ query: 'xyzzy' }));
-    expect(screen.getByText('Nenhum título encontrado para "xyzzy".')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum título encontrado para “xyzzy”.')).toBeInTheDocument();
   });
 });
