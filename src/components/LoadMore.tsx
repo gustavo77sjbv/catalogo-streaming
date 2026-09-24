@@ -12,9 +12,15 @@ interface LoadMoreProps {
   filters: Filters;
   initialPage: number;
   totalPages: number;
+  /** Chaves (`${tipo}-${id}`) dos títulos já mostrados na página 1, para não repeti-los. */
+  initialKeys?: string[];
 }
 
-export function LoadMore({ tipo, filters, initialPage, totalPages }: LoadMoreProps) {
+function keyOf(title: Title): string {
+  return `${title.tipo}-${title.id}`;
+}
+
+export function LoadMore({ tipo, filters, initialPage, totalPages, initialKeys = [] }: LoadMoreProps) {
   const [titles, setTitles] = useState<Title[]>([]);
   const [page, setPage] = useState(initialPage);
   const [status, setStatus] = useState<Status>('idle');
@@ -28,10 +34,12 @@ export function LoadMore({ tipo, filters, initialPage, totalPages }: LoadMorePro
       const response = await fetch(`/api/titles?${params.toString()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = (await response.json()) as TitlePage;
-      setTitles((previous) => [
-        ...previous,
-        ...data.titles.filter((title) => !previous.some((p) => p.id === title.id && p.tipo === title.tipo)),
-      ]);
+      setTitles((previous) => {
+        // As páginas separadamente cacheadas podem repetir títulos entre si, e também com a
+        // página 1 renderizada no servidor — por isso o filtro considera as duas origens.
+        const known = new Set([...initialKeys, ...previous.map(keyOf)]);
+        return [...previous, ...data.titles.filter((title) => !known.has(keyOf(title)))];
+      });
       setPage(data.page);
       setStatus('idle');
     } catch {

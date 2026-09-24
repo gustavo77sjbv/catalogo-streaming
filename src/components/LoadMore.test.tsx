@@ -41,6 +41,31 @@ describe('LoadMore', () => {
     expect(screen.getByRole('button', { name: 'Carregar mais' })).toBeInTheDocument();
   });
 
+  it('não repete um título já mostrado na página 1', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(
+      ok({
+        titles: [makeTitle({ id: 1, titulo: 'Já na página 1' }), makeTitle({ id: 99, titulo: 'Novo Filme' })],
+        page: 2,
+        totalPages: 3,
+      }),
+    );
+    render(
+      <LoadMore
+        tipo="filme"
+        filters={filters}
+        initialPage={1}
+        totalPages={3}
+        initialKeys={['filme-1']}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Carregar mais' }));
+
+    expect(await screen.findByRole('heading', { name: 'Novo Filme' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Já na página 1' })).toBeNull();
+  });
+
   it('esconde o botão depois de carregar a última página', async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(ok({ titles: [makeTitle({ id: 2, titulo: 'Último' })], page: 2, totalPages: 2 }));
