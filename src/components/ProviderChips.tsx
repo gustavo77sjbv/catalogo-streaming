@@ -42,7 +42,12 @@ export function ProviderChips({ providers, selected, onToggle }: ProviderChipsPr
         );
       })}
       {showToggle && (
-        <button type="button" onClick={() => setExpanded((value) => !value)} className="text-sm text-zinc-400 underline">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+          className="text-sm text-zinc-400 underline"
+        >
           {expanded ? 'Ver menos' : `Ver mais (${hiddenCount})`}
         </button>
       )}

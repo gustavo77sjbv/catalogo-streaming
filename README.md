@@ -4,6 +4,8 @@ Filmes e séries disponíveis **agora** nos streamings de assinatura no Brasil, 
 
 ## Rodando localmente
 
+Requer Node.js >= 20.9.
+
 1. Crie uma conta no TMDB e copie o **API Read Access Token** em https://www.themoviedb.org/settings/api
 2. `cp .env.example .env.local` e preencha `TMDB_READ_TOKEN`
 3. `npm install`
@@ -15,7 +17,7 @@ Filmes e séries disponíveis **agora** nos streamings de assinatura no Brasil, 
 |---|---|
 | `npm run dev` | servidor de desenvolvimento |
 | `npm test` | testes unitários e de componentes (Vitest) |
-| `npm run test:e2e` | testes de ponta a ponta (Playwright, com TMDB falso) |
+| `npm run test:e2e` | testes de ponta a ponta (Playwright, com TMDB falso) — rode `npx playwright install chromium` uma vez antes |
 | `npm run typecheck` | checagem de tipos |
 | `npm run lint` | ESLint |
 | `npm run build` | build de produção |

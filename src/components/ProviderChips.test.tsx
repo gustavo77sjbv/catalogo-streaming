@@ -17,11 +17,12 @@ describe('ProviderChips', () => {
     render(<ProviderChips providers={doze} selected={[]} onToggle={() => {}} />);
     expect(screen.getByRole('button', { name: 'Streaming 10' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Streaming 11' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Ver mais (2)' })).toHaveAttribute('aria-expanded', 'false');
 
     await user.click(screen.getByRole('button', { name: 'Ver mais (2)' }));
 
     expect(screen.getByRole('button', { name: 'Streaming 12' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ver menos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver menos' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('mantém visível um streaming selecionado fora dos 10 primeiros', () => {
