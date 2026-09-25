@@ -3,6 +3,7 @@ import {
   filtersHref,
   parseFilters,
   parsePage,
+  parseTitleId,
   parseTitleType,
   serializeFilters,
   toQueryString,
@@ -92,6 +93,17 @@ describe('parsePage', () => {
     ['9999', 500],
   ])('parsePage(%s) = %s', (raw, esperado) => {
     expect(parsePage(raw)).toBe(esperado);
+  });
+});
+
+describe('parseTitleId', () => {
+  it('aceita apenas inteiros positivos', () => {
+    expect(parseTitleId('438631')).toBe(438631);
+    expect(parseTitleId('0')).toBeNull();
+    expect(parseTitleId('-5')).toBeNull();
+    expect(parseTitleId('12abc')).toBeNull();
+    expect(parseTitleId('1.5')).toBeNull();
+    expect(parseTitleId('')).toBeNull();
   });
 });
 

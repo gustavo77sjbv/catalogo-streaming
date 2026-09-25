@@ -26,11 +26,18 @@ describe('TitleCard', () => {
     expect(screen.getByRole('img', { name: 'Netflix' })).toBeInTheDocument();
   });
 
-  it('usa placeholder sem pôster e "Ano desconhecido" sem data', () => {
+  it('usa placeholder sem pôster, "Ano desconhecido" sem data e "sem nota" sem votos', () => {
     render(<TitleCard title={makeTitle({ titulo: 'Raro', ano: null, nota: 0, posterUrl: null })} />);
     expect(screen.queryByRole('img', { name: /Pôster/ })).toBeNull();
     expect(screen.getAllByText('Raro')).toHaveLength(2);
-    expect(screen.getByText('Ano desconhecido · ★ 0,0')).toBeInTheDocument();
+    expect(screen.getByText('Ano desconhecido · sem nota')).toBeInTheDocument();
+  });
+
+  it('leva para a página de detalhes do filme ou da série', () => {
+    const { rerender } = render(<TitleCard title={makeTitle({ id: 42, tipo: 'filme', titulo: 'Duna' })} />);
+    expect(screen.getByRole('link', { name: 'Ver detalhes de Duna' })).toHaveAttribute('href', '/filmes/42');
+    rerender(<TitleCard title={makeTitle({ id: 7, tipo: 'serie', titulo: 'Dark' })} />);
+    expect(screen.getByRole('link', { name: 'Ver detalhes de Dark' })).toHaveAttribute('href', '/series/7');
   });
 
   it('mostra o nome do streaming quando não há logo', () => {

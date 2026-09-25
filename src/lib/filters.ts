@@ -71,6 +71,13 @@ export function parseTitleType(raw: string | null | undefined): TitleType | null
   return raw === 'filme' || raw === 'serie' ? raw : null;
 }
 
+/** ID de título vindo da URL (`/filmes/[id]`): só inteiros positivos. */
+export function parseTitleId(raw: string): number | null {
+  if (!/^\d+$/.test(raw)) return null;
+  const id = Number(raw);
+  return id > 0 ? id : null;
+}
+
 export function parsePage(raw: string | null | undefined): number {
   const page = parseOptional(intSchema, raw);
   if (page === null || page < 1) return 1;
