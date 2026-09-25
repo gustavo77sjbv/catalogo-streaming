@@ -94,8 +94,8 @@ export function TitleDetailsView({ details }: { details: TitleDetails }) {
         </div>
       </div>
 
-      {details.classificacao && (
-        <Section title="Classificação indicativa">
+      <Section title="Classificação indicativa">
+        {details.classificacao ? (
           <span
             aria-label={`Classificação indicativa: ${classificacaoLabel(details.classificacao)}`}
             className={`flex h-10 w-10 items-center justify-center rounded-md text-lg font-bold ${
@@ -104,8 +104,21 @@ export function TitleDetailsView({ details }: { details: TitleDetails }) {
           >
             {details.classificacao}
           </span>
-        </Section>
-      )}
+        ) : (
+          // O TMDB não tem esse dado para todos os títulos (ex.: produções estrangeiras recentes).
+          <div className="flex items-center gap-3">
+            <span
+              aria-label="Classificação indicativa: não informada para o Brasil"
+              className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-700 text-lg font-bold text-zinc-300"
+            >
+              ?
+            </span>
+            <span aria-hidden="true" className="text-sm text-zinc-400">
+              Classificação não informada para o Brasil
+            </span>
+          </div>
+        )}
+      </Section>
 
       {details.trailer && (
         <Section title="Trailer">

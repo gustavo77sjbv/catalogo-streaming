@@ -106,7 +106,9 @@ describe('TitleDetailsView', () => {
     expect(screen.getByText('Sinopse não disponível.')).toBeInTheDocument();
     expect(screen.getByText('Não disponível em streaming no Brasil')).toBeInTheDocument();
     const titulos = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
-    expect(titulos).toEqual(['Onde assistir']);
+    expect(titulos).toEqual(['Onde assistir', 'Classificação indicativa']);
+    expect(screen.getByLabelText('Classificação indicativa: não informada para o Brasil')).toHaveTextContent('?');
+    expect(screen.getByText('Classificação não informada para o Brasil')).toBeInTheDocument();
     expect(screen.queryByRole('img', { name: /Pôster/ })).toBeNull();
   });
 
