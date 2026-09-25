@@ -25,6 +25,44 @@ export interface Title {
   streamings: Provider[];
 }
 
+export interface CastMember {
+  nome: string;
+  personagem: string | null;
+  fotoUrl: string | null;
+}
+
+export interface Trailer {
+  youtubeKey: string;
+  nome: string;
+}
+
+export interface TitleDetails {
+  id: number;
+  tipo: TitleType;
+  titulo: string;
+  /** null quando é igual ao título em português */
+  tituloOriginal: string | null;
+  ano: number | null;
+  /** vote_average do TMDB, 0–10, uma casa decimal */
+  nota: number;
+  votos: number;
+  posterUrl: string | null;
+  generos: string[];
+  /** só filmes */
+  duracaoMin: number | null;
+  /** só séries */
+  temporadas: number | null;
+  episodios: number | null;
+  sinopse: string | null;
+  /** classificação indicativa do Brasil (L, 10, 12, 14, 16, 18) */
+  classificacao: string | null;
+  trailer: Trailer | null;
+  /** diretores (filmes) ou criadores (séries) */
+  direcao: string[];
+  elenco: CastMember[];
+  streamings: Provider[];
+}
+
 export interface Filters {
   streamings: number[];
   generos: number[];

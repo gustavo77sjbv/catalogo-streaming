@@ -82,6 +82,31 @@ const server = http.createServer((req, res) => {
     const flatrate = titleProviders[`${match[1]}/${match[2]}`];
     return send(200, { id: Number(match[2]), results: flatrate ? { BR: { link: '', flatrate } } : {} });
   }
+  const details = path.match(/^\/(movie|tv)\/(\d+)$/);
+  if (details) {
+    const [, media, id] = details;
+    const item = (media === 'movie' ? [...movies, ...searchOnlyMovies] : shows).find((t) => t.id === Number(id));
+    if (!item) return send(404, { status_message: 'não encontrado' });
+    const extra = {
+      vote_count: 100,
+      genres: [{ id: 35, name: 'Comédia' }],
+      overview: `Sinopse de ${item.title ?? item.name}.`,
+      credits: { cast: [{ name: 'Atriz Teste', character: 'Protagonista', profile_path: null, order: 0 }], crew: [] },
+      videos: { results: [] },
+    };
+    return send(
+      200,
+      media === 'movie'
+        ? {
+            ...item,
+            ...extra,
+            original_title: item.title,
+            runtime: 100,
+            release_dates: { results: [{ iso_3166_1: 'BR', release_dates: [{ certification: '12', type: 3 }] }] },
+          }
+        : { ...item, ...extra, original_name: item.name, number_of_seasons: 2, number_of_episodes: 16, created_by: [] },
+    );
+  }
   return send(404, { status_message: 'não encontrado' });
 });
 

@@ -12,12 +12,17 @@ export function yearFrom(date: string | null | undefined): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function roundNota(value: number | null | undefined): number {
+export function roundNota(value: number | null | undefined): number {
   return Math.round((value ?? 0) * 10) / 10;
 }
 
+/** URL de imagem do CDN do TMDB no tamanho pedido (w92, w185, w342, w500...). */
+export function imageUrl(path: string | null | undefined, size: string): string | null {
+  return path ? `${IMAGE_BASE}/${size}${path}` : null;
+}
+
 function posterUrl(path: string | null | undefined): string | null {
-  return path ? `${IMAGE_BASE}/w342${path}` : null;
+  return imageUrl(path, 'w342');
 }
 
 export function mapMovie(raw: RawMovie): Title {
